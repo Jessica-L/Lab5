@@ -34,6 +34,7 @@ object Lab5 extends jsy.util.JsyApplication {
   
   /*** Helper: mapFirst to DoWith ***/
   
+  
   // Just like mapFirst from Lab 4 but uses a callback f that returns a DoWith in the Some case.
   def mapFirstWith[W,A](f: A => Option[DoWith[W,A]])(l: List[A]): DoWith[W,List[A]] = l match {
     case Nil => doreturn(l) //Return list if empty or if we've reached its end.
@@ -43,12 +44,24 @@ object Lab5 extends jsy.util.JsyApplication {
     }
   }
 
+
   /*** Casting ***/
   
   def castOk(t1: Typ, t2: Typ): Boolean = (t1, t2) match {
     case (TNull, TObj(_)) => true
     case (_, _) if (t1 == t2) => true
-    case (TObj(fields1), TObj(fields2)) => throw new UnsupportedOperationException
+
+    //for all objects in field 1:
+    case (TObj(fields1), TObj(fields2)) => fields1.forall {
+      //if type2 is nothing, return true (can cast to Nonetype)
+      case(type1, type2) if (type2 == None) => true
+      //if it is something, check for t1 field type
+      case(type1, type2) => fields2.get(type1) match {
+        case None => true
+        //if there is something there, compare type2 to a new type
+        case Some(type3) => castOk(type2, type3)
+      }
+    }
     case (TInterface(tvar, t1p), _) => castOk(typSubstitute(t1p, t1, tvar), t2)
     case (_, TInterface(tvar, t2p)) => castOk(t1, typSubstitute(t2p, t2, tvar))
     case _ => false
@@ -61,15 +74,14 @@ object Lab5 extends jsy.util.JsyApplication {
     case TObj(fields) if (fields exists { case (_, t) => hasFunctionTyp(t) }) => true
     case _ => false
   } 
-  
-  // Defines the mode of a parameter
-  // Pass by ref returns the MConst mutability and pass by var returns the MVar mutability
+    
   def mut(m: PMode): Mutability = m match {
     case PName => MConst
     case PVar | PRef => MVar
   }
   
   def typeInfer(env: Map[String,(Mutability,Typ)], e: Expr): Typ = {
+    
     def typ(e1: Expr) = typeInfer(env, e1)
     def err[T](tgot: Typ, e1: Expr): T = throw new StaticTypeError(tgot, e1, e)
 
@@ -141,6 +153,7 @@ object Lab5 extends jsy.util.JsyApplication {
         case tgot => err(tgot, e1)
       }
       case Obj(fields) => TObj(fields map { case (f,t) => (f, typ(t)) })
+      
       case GetField(e1, f) => typ(e1) match {
         case TObj(tfields) if (tfields.contains(f)) => tfields(f)
         case tgot => err(tgot, e1)
@@ -157,11 +170,26 @@ object Lab5 extends jsy.util.JsyApplication {
           case _ => err(TUndefined, e1)
         }
         // Bind to env2 an environment that extends env1 with the parameters.
+        
+        /***** pass by variable, name or reference ****
+         * p
+         */
+        
+        
         val env2 = paramse match {
-          case Left(params) => params.foldleft(env1)( (x, tup) => tup match {
-                case (str, typ) => x + (str -> (MConst, typ))
-          })
-          case Right((mode,x,t)) => env1 + (x -> (mode, t))
+          case Left(params) => params.foldLeft(env1){
+            case(environment, parameter) => parameter match {
+              //pass types of type 1 to new environment
+              case(type1, type2) => environment + (type1 -> (MConst, type2))
+            }
+             
+          }
+          case Right((mode,x,t)) => mode match {
+            //pass by name: extend env1 with x mapped to t as MConst
+            case PName => env1 + (x -> (MConst, t))
+            //by variable or reference: pass by MVar
+            case _ => env1 + (x -> (MVar, t))
+          }
         }
         // Infer the type of the function body
         val t1 = typeInfer(env2, e1)
@@ -181,9 +209,7 @@ object Lab5 extends jsy.util.JsyApplication {
         case tgot => err(tgot, e1)
       }
       
-      case Decl(mut: Mutability, x: String, e1: Expr, e2: Expr) => {
-          typeInfer(env + ( x -> (mut, typ(e1)) ), e2)
-      }
+      /*** Fill-in more cases here. ***/
         
       /* Should not match: non-source expressions or should have been removed */
       case A(_) | Unary(Deref, _) | InterfaceDecl(_, _, _) => throw new IllegalArgumentException("Gremlins: Encountered unexpected expression %s.".format(e))
