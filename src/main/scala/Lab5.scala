@@ -36,10 +36,10 @@ object Lab5 extends jsy.util.JsyApplication {
   
   // Just like mapFirst from Lab 4 but uses a callback f that returns a DoWith in the Some case.
   def mapFirstWith[W,A](f: A => Option[DoWith[W,A]])(l: List[A]): DoWith[W,List[A]] = l match {
-    case Nil => throw new UnsupportedOperationException
-    case h :: t => f(h) match {
-      case None => throw new UnsupportedOperationException
-      case Some(withhp) => throw new UnsupportedOperationException
+    case Nil => doreturn(l) //Return list if empty or if we've reached its end.
+    case h :: t => f(h) match { //If list not empty, pattenr match on head.
+      case None => mapFirstWith(f)(t).map((alpha:List[A]) => (h::alpha)) //Continue if no match found.
+      case Some(withhp) => withhp.map((alpha:A)=>(alpha::t)) //If match found, modify alpha and map it to tail.
     }
   }
 
