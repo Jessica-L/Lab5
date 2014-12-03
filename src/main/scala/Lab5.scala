@@ -203,7 +203,19 @@ object Lab5 extends jsy.util.JsyApplication {
           }
           tret
         }
-        case tgot @ TFunction(Right((mode,_,tparam)), tret) => throw new UnsupportedOperationException
+        case tgot @ TFunction(Right((mode,_,tparam)), tret) => mode match { 
+          case badcall if (args.length == 0) => err(tparam,e1) //Return error if args missing.
+          //Check mutability types for pass by name or value; if mismatched, return error
+          case (PName | PVar) => args.head match {
+            case e => if (tparam == typ(e)) typ(e) else err(tparam, e1)
+          }
+          //Check pass by ref conditions hold true -- must be expression -- and
+          //check mutability types; if types mismatched, return error
+          case PRef => args.head match {
+            case a => if (isLExpr(a) &&  tparam == typ(a)) tret else err(tparam, e1)
+          }
+        }
+        case tgot => err(tgot, e1)
       }
       /* Declaration: name of variable x is mapped mode and type of e1 which is
        * extended to the environment env to then infer type of e2.
