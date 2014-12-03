@@ -228,11 +228,11 @@ object Lab5 extends jsy.util.JsyApplication {
        * of a class or something else.
        */
       case Assign(e1, e2) => e1 match {
-        /* Ensure the proper type: field type == e1 type is extended to the environment. */
+        //Ensure the proper type: field type == e1 type is extended to the environment. 
         case GetField(x1, f) => typ(e1) match {
           case t => typeInfer(env + (f -> (MConst, typ(e1))), e2)
         }
-        /* Fetch the variable's type from the environment. */
+        // Fetch the variable's type from the environment. 
         case Var(x) => env.get(x) match { 
           case Some((MConst, t)) => err(typ(e1), e2) //If a constant, return error on e2. 
           //If not a constant and t equals the type of e2, run typeInfer on extend version
