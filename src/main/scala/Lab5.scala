@@ -209,7 +209,7 @@ object Lab5 extends jsy.util.JsyApplication {
           case (PName | PVar) => args.head match {
             case e => if (tparam == typ(e)) typ(e) else err(tparam, e1)
           }
-          //Check pass by ref conditions hold true -- must be expression -- and
+          //Check pass by ref conditions hold true -- must be a location expression -- and
           //check mutability types; if types mismatched, return error
           case PRef => args.head match {
             case a => if (isLExpr(a) &&  tparam == typ(a)) tret else err(tparam, e1)
