@@ -170,12 +170,6 @@ object Lab5 extends jsy.util.JsyApplication {
           case _ => err(TUndefined, e1)
         }
         // Bind to env2 an environment that extends env1 with the parameters.
-        
-        /***** pass by variable, name or reference ****
-         * p
-         */
-        
-        
         val env2 = paramse match {
           case Left(params) => params.foldLeft(env1){
             case(environment, parameter) => parameter match {
@@ -209,7 +203,12 @@ object Lab5 extends jsy.util.JsyApplication {
         case tgot => err(tgot, e1)
       }
       
-      /*** Fill-in more cases here. ***/
+      case Decl(mut: Mutability, x: String, e1: Expr, e2: Expr) => {
+          typeInfer(env + ( x -> (mut, typ(e1)) ), e2)
+      }
+      case Assign(e1, e2) => throw new UnsupportedOperationException
+      case Null => TNull
+      case Cast => throw new UnsupportedOperationException
         
       /* Should not match: non-source expressions or should have been removed */
       case A(_) | Unary(Deref, _) | InterfaceDecl(_, _, _) => throw new IllegalArgumentException("Gremlins: Encountered unexpected expression %s.".format(e))
