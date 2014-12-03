@@ -50,7 +50,6 @@ object Lab5 extends jsy.util.JsyApplication {
   def castOk(t1: Typ, t2: Typ): Boolean = (t1, t2) match {
     case (TNull, TObj(_)) => true
     case (_, _) if (t1 == t2) => true
-
     //for all objects in field 1:
     case (TObj(fields1), TObj(fields2)) => fields1.forall {
       //if type2 is nothing, return true (can cast to Nonetype)
@@ -89,6 +88,7 @@ object Lab5 extends jsy.util.JsyApplication {
       case Print(e1) => typ(e1); TUndefined
       case N(_) => TNumber
       case B(_) => TBool
+      case Null => TNull
       case Undefined => TUndefined
       case S(_) => TString
       case Var(x) =>
@@ -101,6 +101,10 @@ object Lab5 extends jsy.util.JsyApplication {
       case Unary(Not, e1) => typ(e1) match {
         case TBool => TBool
         case tgot => err(tgot, e1)
+      }
+      case Unary(Cast(e1), e2) => (castOk(typ(e2), e1)) match {
+        case true => e1; //if a valid cast, return e1 
+        case false => err(typ(e2), e2); //if invalid, return an error on e2 
       }
       case Binary(Plus, e1, e2) => typ(e1) match {
         case TNumber => typ(e2) match {
@@ -171,17 +175,16 @@ object Lab5 extends jsy.util.JsyApplication {
         }
         // Bind to env2 an environment that extends env1 with the parameters.
         val env2 = paramse match {
-          case Left(params) => params.foldLeft(env1){
+          case Left(params) => params.foldLeft(env1)({
             case(environment, parameter) => parameter match {
               //pass types of type 1 to new environment
               case(type1, type2) => environment + (type1 -> (MConst, type2))
-            }
-             
-          }
+            }      
+          })
           case Right((mode,x,t)) => mode match {
             //pass by name: extend env1 with x mapped to t as MConst
             case PName => env1 + (x -> (MConst, t))
-            //by variable or reference: pass by MVar
+            //pass by variable or reference: pass by MVar
             case _ => env1 + (x -> (MVar, t))
           }
         }
@@ -194,22 +197,45 @@ object Lab5 extends jsy.util.JsyApplication {
       case Call(e1, args) => typ(e1) match {
         case TFunction(Left(params), tret) if (params.length == args.length) => {
           (params, args).zipped.foreach {
-            throw new UnsupportedOperationException
+            (paramX, argY) => (paramX, argY) match {
+              case((str, typParam), typArg) => if (typParam != typ(typArg)) err(typParam, typArg)
+            }
           }
           tret
         }
-        case tgot @ TFunction(Right((mode,_,tparam)), tret) =>
-          throw new UnsupportedOperationException
+        case tgot @ TFunction(Right((mode,_,tparam)), tret) => {//mode match => {
+            //case PName => throw new UnsupportedOperationException
+            //case PVar => throw new UnsupportedOperationException
+            //case PRef => throw new UnsupportedOperationException
+            throw new UnsupportedOperationException
+        }
         case tgot => err(tgot, e1)
       }
       
-      case Decl(mut: Mutability, x: String, e1: Expr, e2: Expr) => {
-          typeInfer(env + ( x -> (mut, typ(e1)) ), e2)
+      case Decl(mut: Mutability, x: String, e1: Expr, e2: Expr) => typeInfer(env + ( x -> (mut, typ(e1)) ), e2)
+      
+      /* Assignment: based on whether e1 is a variable assigned to an instance
+       * of a class or something else.
+       */
+      case Assign(e1, e2) => e1 match {
+        /* Ensure the proper type: field type == e1 type is extended to the environment. */
+        case GetField(x1, f) => typ(e1) match {
+          case t => typeInfer(env + (f -> (MConst, typ(e1))), e2)
+        }
+        /* Fetch the variable's type from the environment. */
+        case Var(x) => env.get(x) match { 
+          case Some((MConst, t)) => err(typ(e1), e2) //If a constant, return error on e2. 
+          //If not a constant and t equals the type of e2, run typeInfer on extend version
+          //of environment with a map between mvar and the new type.
+          case Some((MVar, t)) => {
+            if (t == typ(e2)) { typeInfer(env + (x -> (MVar, typ(e2))), e2) } 
+            else { err(typ(e1), e2) } //Throw an error if variable not in map. 
+          }
+          case _ => typeInfer(env + (x -> (MVar, typ(e2))), e2)
+        }
+        case _ => err(typ(e1), e2)
       }
-      case Assign(e1, e2) => throw new UnsupportedOperationException
-      case Null => TNull
-      case Cast => throw new UnsupportedOperationException
-        
+       
       /* Should not match: non-source expressions or should have been removed */
       case A(_) | Unary(Deref, _) | InterfaceDecl(_, _, _) => throw new IllegalArgumentException("Gremlins: Encountered unexpected expression %s.".format(e))
     }
