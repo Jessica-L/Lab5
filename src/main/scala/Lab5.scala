@@ -4,10 +4,10 @@ object Lab5 extends jsy.util.JsyApplication {
   
   /*
    * CSCI 3155: Lab 5
-   * <Your Name>
+   * Jessica Lynch
    * 
-   * Partner: <Your Partner's Name>
-   * Collaborators: <Any Collaborators>
+   * Partner: Andrew Gordon
+   * Collaborators: Erik Eakins
    */
 
   /*
@@ -28,7 +28,7 @@ object Lab5 extends jsy.util.JsyApplication {
    * 
    * This template compiles without error. Before you submit comment out any
    * code that does not compile or causes a failing assert.  Simply put in a
-   * 'throws new UnsupportedOperationException' as needed to get something
+   * throws new UnsupportedOperationException as needed to get something
    * that compiles without error.
    */
   
