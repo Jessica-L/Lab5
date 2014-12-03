@@ -276,7 +276,7 @@ object Lab5 extends jsy.util.JsyApplication {
   /* Capture-avoiding substitution in e replacing variables x with esub. */
   def substitute(e: Expr, esub: Expr, x: String): Expr = {
     def subst(e: Expr): Expr = substitute(e, esub, x)
-    val ep: Expr = throw new UnsupportedOperationException
+    val ep: Expr = avoidCapture(freeVars(esub), e)
     ep match {
       case N(_) | B(_) | Undefined | S(_) | Null | A(_) => e
       case Print(e1) => Print(subst(e1))
@@ -285,13 +285,48 @@ object Lab5 extends jsy.util.JsyApplication {
       case If(e1, e2, e3) => If(subst(e1), subst(e2), subst(e3))
       case Var(y) => if (x == y) esub else e
       case Decl(mut, y, e1, e2) => Decl(mut, y, subst(e1), if (x == y) e2 else subst(e2))
-      case Function(p, paramse, retty, e1) =>
-        throw new UnsupportedOperationException
       case Call(e1, args) => Call(subst(e1), args map subst)
       case Obj(fields) => Obj(fields map { case (fi,ei) => (fi, subst(ei)) })
       case GetField(e1, f) => GetField(subst(e1), f)
       case Assign(e1, e2) => Assign(subst(e1), subst(e2))
       case InterfaceDecl(tvar, t, e1) => InterfaceDecl(tvar, t, subst(e1))
+        
+      //function substitution
+      //p = funcname, paramse = parameters, retty = return type, e1 = function body
+      //checking on args/params: this part same as lab4
+      case Function(p, Left(paramse), retty, e1) => p match {
+        
+    	  //unnamed function    
+           case None => 
+             //for all params, if var name is not tuple_1, subst on e1
+             if (paramse.forall{ case(n,_) => (x!= n) } ) Function(p, Left(paramse), retty, subst(e1))
+             
+             //else return function itself
+             else Function(p, Left(paramse), retty, e1)
+    	  	
+           //named function:  
+           case Some(a) =>
+             //same as above, but also check if x != a
+             if (paramse.forall { case(n,_) => (x!= n) } && x != a) Function(p, Left(paramse), retty, subst(e1))
+             
+             else Function(p, Left(paramse), retty, subst(e1))
+      }
+            
+      //check mode and do apppropriate thing for pass by name, value etc
+      //for paramse, need to check mode, string, type
+      case Function(p, Right(paramse@(mode, s, t)), retty, e1) => p match {
+    	  
+    	  //unnamed function with modes: check if string x in parameters
+    	  // if not, substitute on body; if so, return function with body e1 
+    	  case None => 
+    	    if (x != s) Function(p, Right(paramse), retty, subst(e1))
+    	    else Function(p, Right(paramse), retty, e1)
+   	  
+    	  //same as above but check equivalence with a as well
+    	  case Some(a) =>
+    	    if (x != s && x != a) Function(p, Right(paramse), retty, subst(e1))
+    	    Function(p, Right(paramse), retty, e1)
+      }
     }
   }
 
