@@ -203,17 +203,30 @@ object Lab5 extends jsy.util.JsyApplication {
           }
           tret
         }
-        case tgot @ TFunction(Right((mode,_,tparam)), tret) => {//mode match => {
-            //case PName => throw new UnsupportedOperationException
-            //case PVar => throw new UnsupportedOperationException
-            //case PRef => throw new UnsupportedOperationException
-            throw new UnsupportedOperationException
+        /* Simplify by naming a function with mutable params tgot */
+        case tgot @ TFunction(Right((mode,_,tparam)), tret) mode match => { 
+          case badcall if (args.length == 0) => err(tparam,e1) //Return error if args missing.
+          //Checking mutability types for pass by name or value; if mismatched, return error
+          case (PName | PVar) => args.head match {
+            case e => if (tparam == typ(e)) typ(e) else err(tparam, e1)
+          }
+          //Checking pass by ref conditions hold true -- must be expression -- and
+          //mutability types; if types mismatched, return error
+          case PRef => args.head match{
+            //if we want to do pass by ref 
+              case a => if (isLExpr(a) &&  tparam == typ(a)) tret
+              else err(tparam, e1)
+          }
         }
         case tgot => err(tgot, e1)
       }
-      
-      case Decl(mut: Mutability, x: String, e1: Expr, e2: Expr) => typeInfer(env + ( x -> (mut, typ(e1)) ), e2)
-      
+
+      /* Declaration: name of variable x is mapped mode and type of e1 which is
+       * extended to the environment env to then infer type of e2.
+       */
+      case Decl(mut: Mutability, x: String, e1: Expr, e2: Expr) => {
+        typeInfer(env + ( x -> (mut, typ(e1)) ), e2)
+      }
       /* Assignment: based on whether e1 is a variable assigned to an instance
        * of a class or something else.
        */
