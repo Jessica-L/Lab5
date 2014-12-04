@@ -291,7 +291,7 @@ object Lab5 extends jsy.util.JsyApplication {
       case Assign(e1, e2) => Assign(subst(e1), subst(e2))
       case InterfaceDecl(tvar, t, e1) => InterfaceDecl(tvar, t, subst(e1))
         
-      //***** Function Substitution *****//
+      /*** Function Substitution (immutable parameters) ***/
       //p = func name, paramse = parameter expressions, retty = return type, e1 = func body
       //Checking on args/params: this part same as lab4
       case Function(p, Left(paramse), retty, e1) => p match {     
@@ -306,16 +306,17 @@ object Lab5 extends jsy.util.JsyApplication {
              if (paramse.forall { case(n,_) => (x!= n) } && x != a) Function(p, Left(paramse), retty, subst(e1))
              else Function(p, Left(paramse), retty, subst(e1))
       }
-            
+
+      /*** Function Substitution (mutable parameters) ***/            
       //Check mode and do apppropriate thing for pass by name, value and reference;
       //for paramse, need to check mode, string, type.
       case Function(p, Right(paramse@(mode, s, t)), retty, e1) => p match {    	  
-    	  //If unnamed function with modes, check if string x in parameters.
+    	  //ANONYMOUS FUNCTION: If unnamed function with modes, check if string x in parameters.
     	  //If not, substitute on body and return function with body e1.
     	  case None => 
     	    if (x != s) Function(p, Right(paramse), retty, subst(e1))
     	    else Function(p, Right(paramse), retty, e1)   	  
-    	  //Same as above but check equivalence with a as well.
+    	  //NAMED FUNCTION: Same as above but check equivalence with a as well.
     	  case Some(a) =>
     	    if (x != s && x != a) Function(p, Right(paramse), retty, subst(e1))
     	    Function(p, Right(paramse), retty, e1)
