@@ -358,14 +358,18 @@ object Lab5 extends jsy.util.JsyApplication {
       case Binary(Div, N(n1), N(n2)) => doreturn( N(n1 / n2) )
       case If(B(b1), e2, e3) => doreturn( if (b1) e2 else e3 )
       
-      //Parameters: the fields within the object
-      //Allocate memory for object with param fields and then map each object
-      //field to memory a location.
+      /* DO RULE OBJ:
+       *   Parameters: the fields within the object
+       *   Description: allocate memory for object with param fields and then map
+       *   each field of the object to an address a.
+       */
       case Obj(fields) if (fields forall { case (_, vi) => isValue(vi)}) => 
         Mem.alloc(Obj(fields)) map { (a:A) => a:Expr }
-        
-      //Parameters: memory location (address) a and field f
-      //Fetch data at address a of field name f
+      
+     /* DO RULE GETFIELD:
+      *    Parameters: memory location (address) a and field f
+      *    Description: fetch data at address a of field name f
+      */
       case GetField(a @ A(_), f) => {
         //doget calls a DoWith object to which we map object address
     	doget.map( (m: Mem) => m.get(a) match { 
@@ -378,7 +382,11 @@ object Lab5 extends jsy.util.JsyApplication {
           case _ => throw StuckError(e)
     	})
       }
-      
+
+     /* DO RULE CALL:
+      *    Parameters: func name v1 and argument list args
+      *    Description: 
+      */
       case Call(v1, args) if isValue(v1) =>
         def substfun(e1: Expr, p: Option[String]): Expr = p match {
           case None => e1
