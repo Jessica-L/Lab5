@@ -363,11 +363,28 @@ object Lab5 extends jsy.util.JsyApplication {
       case Binary(Times, N(n1), N(n2)) => doreturn( N(n1 * n2) )
       case Binary(Div, N(n1), N(n2)) => doreturn( N(n1 / n2) )
       case If(B(b1), e2, e3) => doreturn( if (b1) e2 else e3 )
-      case Obj(fields) if (fields forall { case (_, vi) => isValue(vi)}) =>
-        throw new UnsupportedOperationException
-      case GetField(a @ A(_), f) =>
-        throw new UnsupportedOperationException
+      
+      //Parameter: the fields within the object
+      //Allocate memory for object with param fields and then map each object
+      //field to memory a location.
+      case Obj(fields) if (fields forall { case (_, vi) => isValue(vi)}) => 
+        Mem.alloc(Obj(fields)) map { (a:A) => a:Expr }
         
+      //Parameters: memory location (address) a and field f
+      //Fetch data at address a of field name f
+      case GetField(a @ A(_), f) => {
+        //doget calls a DoWith object to which we map object address
+    	doget.map( (m: Mem) => m.get(a) match { 
+          //Check fields of new object to see if f exists
+          case Some(Obj(fields)) => fields.get(f) match {
+            case Some(field) => field
+            case _ => throw StuckError(e)
+          }
+          //If not an object, throw error. 
+          case _ => throw StuckError(e)
+    	})
+      }
+      
       case Call(v1, args) if isValue(v1) =>
         def substfun(e1: Expr, p: Option[String]): Expr = p match {
           case None => e1
