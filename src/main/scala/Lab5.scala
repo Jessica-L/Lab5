@@ -291,38 +291,31 @@ object Lab5 extends jsy.util.JsyApplication {
       case Assign(e1, e2) => Assign(subst(e1), subst(e2))
       case InterfaceDecl(tvar, t, e1) => InterfaceDecl(tvar, t, subst(e1))
         
-      //function substitution
-      //p = funcname, paramse = parameters, retty = return type, e1 = function body
-      //checking on args/params: this part same as lab4
-      case Function(p, Left(paramse), retty, e1) => p match {
-        
-    	  //unnamed function    
+      //***** Function Substitution *****//
+      //p = func name, paramse = parameter expressions, retty = return type, e1 = func body
+      //Checking on args/params: this part same as lab4
+      case Function(p, Left(paramse), retty, e1) => p match {     
+    	  //ANONYMOUS FUNCTION: 
            case None => 
-             //for all params, if var name is not tuple_1, subst on e1
-             if (paramse.forall{ case(n,_) => (x!= n) } ) Function(p, Left(paramse), retty, subst(e1))
-             
-             //else return function itself
-             else Function(p, Left(paramse), retty, e1)
-    	  	
-           //named function:  
+             //For all params, if var name is not tuple_1, subst on e1 else return the function itself.
+             if (paramse.forall{ case(n,_) => (x!= n) } ) Function(p, Left(paramse), retty, subst(e1))   
+             else Function(p, Left(paramse), retty, e1)	
+           //NAMED FUNCTION:  
            case Some(a) =>
-             //same as above, but also check if x != a
+             //Same as above, but also check if x != a.
              if (paramse.forall { case(n,_) => (x!= n) } && x != a) Function(p, Left(paramse), retty, subst(e1))
-             
              else Function(p, Left(paramse), retty, subst(e1))
       }
             
-      //check mode and do apppropriate thing for pass by name, value etc
-      //for paramse, need to check mode, string, type
-      case Function(p, Right(paramse@(mode, s, t)), retty, e1) => p match {
-    	  
-    	  //unnamed function with modes: check if string x in parameters
-    	  // if not, substitute on body; if so, return function with body e1 
+      //Check mode and do apppropriate thing for pass by name, value and reference;
+      //for paramse, need to check mode, string, type.
+      case Function(p, Right(paramse@(mode, s, t)), retty, e1) => p match {    	  
+    	  //If unnamed function with modes, check if string x in parameters.
+    	  //If not, substitute on body and return function with body e1.
     	  case None => 
     	    if (x != s) Function(p, Right(paramse), retty, subst(e1))
-    	    else Function(p, Right(paramse), retty, e1)
-   	  
-    	  //same as above but check equivalence with a as well
+    	    else Function(p, Right(paramse), retty, e1)   	  
+    	  //Same as above but check equivalence with a as well.
     	  case Some(a) =>
     	    if (x != s && x != a) Function(p, Right(paramse), retty, subst(e1))
     	    Function(p, Right(paramse), retty, e1)
@@ -364,7 +357,7 @@ object Lab5 extends jsy.util.JsyApplication {
       case Binary(Div, N(n1), N(n2)) => doreturn( N(n1 / n2) )
       case If(B(b1), e2, e3) => doreturn( if (b1) e2 else e3 )
       
-      //Parameter: the fields within the object
+      //Parameters: the fields within the object
       //Allocate memory for object with param fields and then map each object
       //field to memory a location.
       case Obj(fields) if (fields forall { case (_, vi) => isValue(vi)}) => 
