@@ -1,0 +1,27 @@
+var x = { type: "macintosh", color: "red",
+    getInfo: function () {
+        return "color";
+    }
+}
+x
+x.type = "different type"
+x
+
+x.getInfo()
+x.getInfo = function() { return "FOO" }
+x.getInfo() 
+
+
+var x = "23"
+
+const x = { f : {}, g:0 }
+(< { f : { h: number }}>x).f.h
+
+function passBy(PMode : mode, Expr : obj, typ: type)
+{
+	return obj.type = "fancy new type"
+}
+
+myObject = {type: "initial type"}
+
+myObject.type
