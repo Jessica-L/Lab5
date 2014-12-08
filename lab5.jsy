@@ -1,0 +1,29 @@
+var x = { type: "macintosh", color: "red",
+    getInfo: function () {
+        return "color";
+    }
+}
+x.type = "different type"
+x.getInfo = function() { return "FOO" } 
+
+var z = x
+
+
+//bad: free variable
+//n = 23
+
+var y = 23
+
+//can't return n = n + 10 here; invalid type for assign (pass by value)
+const addition = function add(n: number):number {return n + 10}
+addition(y)
+
+//reassign actual value of y (pass by reference) 
+const addition2 = function addbyname(ref n: number): number {return n = n+ 10}
+
+addition2(y)
+
+var q = y+2
+
+//q = 35
+q
