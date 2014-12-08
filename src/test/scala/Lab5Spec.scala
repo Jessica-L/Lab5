@@ -12,18 +12,6 @@ class Lab5Spec extends FlatSpec {
      assertResult((42,gold1)) { dowith(42) }
   }
   
-  "DoNeg" should "negate values" in {
-    val e = Unary(Neg, N(42))
-    val (mp:Mem, ep: Expr) = step(e)(Mem.empty)
-    assertResult(N(-42)) { ep }
-  }
-
-  "DoSeq" should "produce second element in sequence" in {
-    val e = Binary(Seq, N(1), Binary(Plus, N(2), N(3)))
-    val (mp:Mem, ep: Expr) = step(e)(Mem.empty)
-    assertResult(Binary(Plus, N(2), N(3))) { ep }
-  }
-  
   "DoGetField" should "access a field from an object in memory" in {
     val setup = Obj(Map("a" -> N(42), "b" -> N(47)))
     val (m:Mem, addr: A) = step(setup)(Mem.empty)
@@ -47,7 +35,6 @@ class Lab5Spec extends FlatSpec {
   "SearchCall1" should "step its function" in {
     val e = Call(If(B(true),Function(None,Left(List(("n",TNumber))),None,Var("n")),Null),List(N(42)))
     val (_, ep: Expr) = step(e)(Mem.empty)
-    assertResult(
-      Call(Function(None, Left(List(("n", TNumber))), None, Var("n")), List(N(42)))) { ep }    
+    assertResult(Call(Function(None, Left(List(("n", TNumber))), None, Var("n")), List(N(42)))) { ep }    
   }
 }
